@@ -1,66 +1,48 @@
-const http = require('http');
+const express = require("express");
+
+const app = express();
+
+app.use(express.json());
+
 const port = 8081;
 
 const toDoList = ["Complete Node Byte", "Playing Cricket"];
 
-http
-    .createServer((req, res) => {
-        const { method, url } = req;
+//http://localhost:8081
+app.get("/todos", (req, res) => {
+    res.status(200).send(toDoList);
+});
 
-        if (url === "/todos") {
-            if (method === "GET") {
-                res.writeHead(200, { "Content-Type": "text/html" });
-                res.write(toDoList.toString());
-            } else if (method === "POST") {
-                let body = '';
-                req.on("error", (err) => {
-                    console.error(err);
-                }).on("data", (chunk) => {
-                    body += chunk;
-                }).on("end", () => {
-                    body = JSON.parse(body);
-                    let newToDo = toDoList;
-                    newToDo.push(body.item);
-                    console.log(newToDo);
-                    res.writeHead(201);
-                });
+app.post("/todos", (req, res) => {
+    let newToDoItem = req.body.item;
+    toDoList.push(newToDoItem);
+    res.status(201).send({
+        message: "Task Added Successfully",
+    });
+});
 
-            } else if (method === "DELETE") {
-                let body = '';
-                req.on('error', (err) => {
-                    console.log(err);
-                }).on('data', (chunk) => {
-                    body += chunk;
-                }).on('end', () => {
-                    body = JSON.parse(body);
-                    let deleteThis = body.item;
+app.delete("/todos", (req, res) => {
+    const itemToDelete = req.body.item;
 
-                    /* for (let i = 0; i < toDoList.length; i++) {
-                         if (toDoList[i] === deleteThis) {
-                             toDoList.splice(i, 1);
-                             break;
-                         }
-                      }*/
-
-                    toDoList.find((element, index) => {
-                        if (element === deleteThis) {
-                            toDoList.splice(index, 1);
-                        }
-                    });
-
-                    res.writeHead(204);
-                });
-            } else {
-                res.writeHead(501);
-            }
-        } else {
-            res.writeHead(404);
+    toDoList.find((element, index) => {
+        if (element === itemToDelete) {
+            toDoList.splice(index, 1);
         }
-
-        res.end();
-    })
-    .listen(port, () => {
-        console.log(`Nodejs server started on ${port}`);
     });
 
-    //http://localhost:8081
+    res.status(202).send({
+        message: `Deleted item - ${req.body.item}`,
+    });
+});
+
+app.all("/todos", (req, res) => {
+    res.status(501).send();
+});
+
+app.all("*", (req, res) => {
+    res.status(404).send();
+});
+
+app.listen(port, () => {
+    console.log(`Nodejs Server started on ${port}`);
+});
